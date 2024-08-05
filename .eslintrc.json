@@ -9,7 +9,8 @@
     "react/react-in-jsx-scope": "off",
     "object-curly-spacing": "off",
     "no-unused-vars": "warn",
-    "no-trailing-spaces": "warn"
+    "no-trailing-spaces": "warn",
+    "react/prop-types": "off"
   },
   "extends": ["google", "plugin:react/recommended"],
   "parserOptions": {
