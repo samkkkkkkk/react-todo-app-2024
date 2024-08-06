@@ -55,12 +55,67 @@ const TodoTemplate = () => {
     setTodos([...todos, newTodo]);
   };
 
-  console.log(todos);
+  // 할 일 삭제 처리 함수
+  const removeTodo = (id) => {
+    // const removeTodos = todos.filter((todo) => {
+    //   return todo.id !== id;
+    // });
+    // setTodos(removeTodos);
+
+    setTodos(todos.filter((todo) => todo.id !== id));
+  };
+
+  // 할 일 체크 처리 함수
+  const checkTodo = (id) => {
+    // findIndex 사용방법
+    // const index = todos.findIndex((todo) => todo.id === id);
+    // const newTodos = [...todos];
+    // newTodos[index] = {
+    //   ...newTodos[index],
+    //   done: !newTodos[index].done,
+    // };
+    // forEach를 사용하는 방법
+    // const newTodos = [];
+    // todos.forEach((todo) => {
+    //   if (todo.id === id) {
+    //     todo = {
+    //       ...todo,
+    //       done: !todo.done,
+    //     };
+    //   }
+    //   newTodos.push(todo);
+    // });
+    // setTodos(newTodos);
+    // 일반 for문
+    // const copyTodos = [...todos];
+    // for (const cTodo of copyTodos) {
+    //   if (cTodo.id === id) {
+    //     cTodo.done = !cTodo.done;
+    //   }
+    // }
+    // setTodos(copyTodos);
+    // 고차함수 사용하기
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id
+          ? { ...todo, done: !todo.done }
+          : todo,
+      ),
+    );
+  };
+
+  // 체크가 안 된 할 일의 개수를 카운트 하기
+  const countRestTodo = () =>
+    todos.filter((todo) => !todo.done).length;
 
   return (
     <div className='TodoTemplate'>
-      <TodoHeader />
-      <TodoMain todoList={todos} />
+      <TodoHeader countTodo={countRestTodo} />
+      <TodoMain
+        todoList={todos}
+        remove={removeTodo}
+        check={checkTodo}
+      />
       <TodoInput addTodo={addTodo} />
     </div>
   );
