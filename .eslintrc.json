@@ -12,7 +12,7 @@
     "no-trailing-spaces": "warn",
     "react/prop-types": "off",
     "operator-linebreak": "off",
-    "parser": "babel-parser",
+    "parser": "off",
     "indent": "off"
   },
   "extends": [
