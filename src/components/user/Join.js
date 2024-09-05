@@ -6,70 +6,29 @@ import {
   Typography,
   Link,
 } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import {
   API_BASE_URL,
   USER,
 } from '../../config/host-config';
+import { initialState, joinReducer } from './joinReducer';
+import { debounce } from 'lodash';
 
 const Join = () => {
-  // 상태 변수로 회원가입 변수 관리
-  const [userValue, setUserValue] = useState({
-    userName: '',
-    password: '',
-    email: '',
-  });
+  // useReducer를 사용해서 리듀서 함수 등록, state와 dispatch를 전달받음.
+  const [state, dispatch] = useReducer(
+    joinReducer,
+    initialState,
+  );
 
-  // 검증 완료 체크에 대한 상태변수 관리
-  // 각각의 입력창마다 유효성 검증 상태를 관리해야 하기 때문에 객체로 선언.
-  // 상태를 유지하려는 이유 -> 스타일, 마지막에 회원가입 버튼 누를 때 까지 검증 상태를 유지해야 하기 때문
-  const [correct, setCorrect] = useState({
-    userName: false,
-    password: false,
-    passwordCheck: false,
-    email: false,
-  });
-
-  // 검증 메세지에 대한 상태변수 관리
-  // 입력값과 메세지는 따로 상태 관리 (메세지는 백엔드로 보내줄 필요 없음)
-  // 메세지 영역은 각 입력창마다 존재(이름, 이메일, 비밀번호...) 하기 때문에 객체 형태로 한 번에 관리.
-  const [message, setMessage] = useState({
-    userName: '',
-    password: '',
-    passwordCheck: '',
-    email: '',
-  });
-
-  // 검증 된 데이터를  각각의 상태변수에 저장해 주는 함수.
-  const saveInputState = ({
-    key,
-    inputValue,
-    flag,
-    msg,
-  }) => {
-    // 입력값 세팅
-    // 패스워드 확인 입력값은 굳이 userValue 상태로 유지할 필요가 없기 때문에
-    // 임의의 문자열 'pass'를 넘기고 있습니다. -> pass가 넘어온다면 setUserValue()를 실행하지 않습니다.
-    inputValue !== 'pass' &&
-      setUserValue((oldVal) => {
-        return { ...oldVal, [key]: inputValue };
-      });
-
-    // 메세지 세팅
-    setMessage((oldMsg) => {
-      return { ...oldMsg, [key]: msg };
-    });
-
-    // 입력 값 검증 세팅
-    setCorrect((oldCorrect) => {
-      return { ...oldCorrect, [key]: flag };
-    });
-  };
+  // 상태 객체에서 각각의 상태 객체값을 분해 할당.
+  const { userValue, message, correct } = state;
 
   // 이름 입력창 체인지 이벤트 핸들러
-  const nameHandler = (e) => {
+  const nameHandler = debounce((inputValue) => {
+    console.log('nameHandler가 동작함!');
+
     const nameRegex = /^[가-힣]{2,5}$/;
-    const inputValue = e.target.value;
 
     // 입력값 검증
     let msg; // 검증 메세지를 저장할 변수
@@ -84,14 +43,22 @@ const Join = () => {
       flag = true;
     }
 
-    // saveInputState에게 이 핸들러에서 처리한 여러가지 값을 객체로 한번에 넘기기.
-    saveInputState({
+    dispatch({
+      type: 'SET_USER_VALUE',
       key: 'userName',
-      inputValue,
-      msg,
-      flag,
+      value: inputValue,
     });
-  };
+    dispatch({
+      type: 'SET_MESSAGE',
+      key: 'userName',
+      value: msg,
+    });
+    dispatch({
+      type: 'SET_CORRECT',
+      key: 'userName',
+      value: flag,
+    });
+  }, 500);
 
   // 이메일 중복체크 서버 통신 함수
   const fetchDuplicateCheck = (email) => {
@@ -107,19 +74,27 @@ const Join = () => {
           msg = '사용 가능한 이메일 입니다.';
           flag = true;
         }
-        // 중복확인 후 상태값 변경.
-        saveInputState({
+
+        dispatch({
+          type: 'SET_USER_VALUE',
           key: 'email',
-          inputValue: email,
-          msg,
-          flag,
+          value: email,
+        });
+        dispatch({
+          type: 'SET_MESSAGE',
+          key: 'email',
+          value: msg,
+        });
+        dispatch({
+          type: 'SET_CORRECT',
+          key: 'email',
+          value: flag,
         });
       });
   };
 
   // 이메일 입력창 체인지 이벤트 핸들러
-  const emailHandler = (e) => {
-    const inputValue = e.target.value;
+  const emailHandler = debounce((inputValue) => {
     const emailRegex =
       /^[A-Za-z0-9_\.\-]+@[A-Za-z0-9\-]+\.[A-Za-z0-9\-]+/;
 
@@ -135,25 +110,38 @@ const Join = () => {
       fetchDuplicateCheck(inputValue);
     }
 
-    // 중복확인 후에만 상태변경 하는 것이 아닙니다.
-    // 입력창이 비거나, 정규표현식 위반인 경우에도 상태는 변경 되어야 합니다.
-    saveInputState({
+    dispatch({
+      type: 'SET_USER_VALUE',
       key: 'email',
-      inputValue,
-      msg,
-      flag,
+      value: inputValue,
     });
-  };
+    dispatch({
+      type: 'SET_MESSAGE',
+      key: 'email',
+      value: msg,
+    });
+    dispatch({
+      type: 'SET_CORRECT',
+      key: 'email',
+      value: flag,
+    });
+  }, 500);
 
   // 패스워드 입력창 체인지 이벤트
-  const passwordHandler = (e) => {
+  const passwordHandler = debounce((inputValue) => {
     // 패스워드가 변경됐다 -> 패스워드 확인란도 지우겠다.
     document.getElementById('password-check').value = '';
+    dispatch({
+      type: 'SET_MESSAGE',
+      key: 'passwordCheck',
+      value: '',
+    });
+    dispatch({
+      type: 'SET_CORRECT',
+      key: 'passwordCheck',
+      value: false,
+    });
 
-    setMessage({ ...message, passwordCheck: '' });
-    setCorrect({ ...correct, passwordCheck: '' });
-
-    const inputValue = e.target.value;
     const pwRegex =
       /^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,20}$/;
 
@@ -170,33 +158,48 @@ const Join = () => {
       flag = true;
     }
 
-    saveInputState({
+    dispatch({
+      type: 'SET_USER_VALUE',
       key: 'password',
-      inputValue,
-      msg,
-      flag,
+      value: inputValue,
     });
-  };
+
+    dispatch({
+      type: 'SET_MESSAGE',
+      key: 'password',
+      value: msg,
+    });
+    dispatch({
+      type: 'SET_CORRECT',
+      key: 'password',
+      value: flag,
+    });
+  }, 500);
 
   // 비밀번호 확인란 체인지 이벤트 핸들러
-  const pwCheckHadnler = (e) => {
+  const pwCheckHadnler = debounce((inputValue) => {
     let msg;
     let flag = false;
-    if (!e.target.value) {
+    if (!inputValue) {
       msg = '비밀번호 확인란은 필수입니다.';
-    } else if (userValue.password !== e.target.value) {
+    } else if (userValue.password !== inputValue) {
       msg = '비밀번호가 일치하지 않습니다.';
     } else {
       msg = '비밀번호가 일치합니다.';
       flag = true;
     }
-    saveInputState({
+
+    dispatch({
+      type: 'SET_MESSAGE',
       key: 'passwordCheck',
-      inputValue: 'pass',
-      msg,
-      flag,
+      value: msg,
     });
-  };
+    dispatch({
+      type: 'SET_CORRECT',
+      key: 'passwordCheck',
+      value: flag,
+    });
+  }, 500);
 
   // 4개의 입력창이 모두 검증에 통과했는지 여부를 검사
   const isValid = () => {
@@ -264,7 +267,7 @@ const Join = () => {
               id='username'
               label='유저 이름'
               autoFocus
-              onChange={nameHandler}
+              onChange={(e) => nameHandler(e.target.value)}
             />
             <span
               style={
@@ -285,7 +288,7 @@ const Join = () => {
               label='이메일 주소'
               name='email'
               autoComplete='email'
-              onChange={emailHandler}
+              onChange={(e) => emailHandler(e.target.value)}
             />
             <span
               style={
@@ -307,7 +310,9 @@ const Join = () => {
               type='password'
               id='password'
               autoComplete='current-password'
-              onChange={passwordHandler}
+              onChange={(e) =>
+                passwordHandler(e.target.value)
+              }
             />
             <span
               style={
@@ -330,7 +335,9 @@ const Join = () => {
               type='password'
               id='password-check'
               autoComplete='check-password'
-              onChange={pwCheckHadnler}
+              onChange={(e) =>
+                pwCheckHadnler(e.target.value)
+              }
             />
             <span
               id='check-span'
