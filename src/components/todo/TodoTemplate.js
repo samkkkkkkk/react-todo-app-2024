@@ -4,17 +4,20 @@ import '../../scss/TodoTemplate.scss';
 import TodoHeader from './TodoHeader';
 import TodoMain from './TodoMain';
 import TodoInput from './TodoInput';
+import {
+  API_BASE_URL,
+  TODO,
+} from '../../config/host-config';
 
 const TodoTemplate = () => {
   // 백앤드 서버에 할 일 목록(json)을 요청(fetch)해서 받아와야 함
-  const API_BASE_URL = 'http://localhost:8181/api/todos';
 
   // todos 배열을 상태 관리
   const [todos, setTodos] = useState([]);
 
   useEffect(() => {
     // 페이지가 처음 렌더링 됨과 동시에 할 일 목록을 서버에 요청해서 뿌려 주겠습니다.
-    fetch(API_BASE_URL)
+    fetch(`${API_BASE_URL}${TODO}`)
       .then((res) => res.json())
       .then((json) => {
         console.log(json);
@@ -33,7 +36,7 @@ const TodoTemplate = () => {
     const newTodo = {
       title: todoText,
     };
-    fetch(API_BASE_URL, {
+    fetch(`${API_BASE_URL}${TODO}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(newTodo),
@@ -52,7 +55,7 @@ const TodoTemplate = () => {
 
   // 할 일 삭제 처리 함수
   const removeTodo = (id) => {
-    fetch(`${API_BASE_URL}/${id}`, {
+    fetch(`${API_BASE_URL}${TODO}/${id}`, {
       method: 'DELETE',
     })
       .then((res) => res.json())
@@ -65,7 +68,7 @@ const TodoTemplate = () => {
 
   // 할 일 체크 처리 함수
   const checkTodo = (id, done) => {
-    fetch(API_BASE_URL, {
+    fetch(`${API_BASE_URL}${TODO}`, {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
