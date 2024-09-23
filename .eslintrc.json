@@ -25,7 +25,6 @@
         "endOfLine": "auto"
       }
     ],
-    "space-before-function-paren": ["error", "never"],
     "require-jsdoc": "off",
     "padded-blocks": "off",
     "linebreak-style": "off",
@@ -40,6 +39,7 @@
     "indent": "off",
     "max-len": "off",
     "no-useless-escape": "off",
-    "prefer-const": "warn"
+    "prefer-const": "warn",
+    "space-before-function-paren": "off"
   }
 }
