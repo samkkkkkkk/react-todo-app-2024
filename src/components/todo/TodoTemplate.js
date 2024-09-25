@@ -5,13 +5,17 @@ import TodoHeader from './TodoHeader';
 import TodoMain from './TodoMain';
 import TodoInput from './TodoInput';
 import {
-  API_BASE_URL,
+  API_BASE_URL as BASE,
   TODO,
+  USER,
 } from '../../config/host-config';
 import { useNavigate } from 'react-router-dom';
 import { Spinner } from 'reactstrap';
 
 const TodoTemplate = () => {
+  const API_BASE_URL = BASE + TODO;
+  const API_USER_URL = BASE + USER;
+
   const redirection = useNavigate();
 
   // 백앤드 서버에 할 일 목록(json)을 요청(fetch)해서 받아와야 함
@@ -23,7 +27,9 @@ const TodoTemplate = () => {
   const [loading, setLoading] = useState(true);
 
   // 로그인 인증 토큰 얻어오기
-  const token = localStorage.getItem('ACCESS_TOKEN');
+  const [token, setToken] = useState(
+    localStorage.getItem('ACCESS_TOKEN'),
+  );
 
   // fetch 요청을 보낼 때 사용할 요청 해더 설정.
   const requestHeader = {
@@ -42,14 +48,18 @@ const TodoTemplate = () => {
       title: todoText,
     };
 
-    const res = await fetch(`${API_BASE_URL}${TODO}`, {
+    const res = await fetch(API_BASE_URL, {
       method: 'POST',
       headers: requestHeader,
       body: JSON.stringify(newTodo),
     });
-
-    const json = await res.json();
-    setTodos(json.todos);
+    if (res.status === 200) {
+      const json = await res.json();
+      setTodos(json.todos);
+    } else if (res.status === 403) {
+      const text = await res.text();
+      alert(text);
+    }
 
     /*    
     fetch(`${API_BASE_URL}${TODO}`, {
@@ -72,7 +82,7 @@ const TodoTemplate = () => {
 
   // 할 일 삭제 처리 함수
   const removeTodo = (id) => {
-    fetch(`${API_BASE_URL}${TODO}/${id}`, {
+    fetch(`${API_BASE_URL}/${id}`, {
       method: 'DELETE',
       headers: requestHeader,
     })
@@ -86,7 +96,7 @@ const TodoTemplate = () => {
 
   // 할 일 체크 처리 함수
   const checkTodo = (id, done) => {
-    fetch(`${API_BASE_URL}${TODO}`, {
+    fetch(API_BASE_URL, {
       method: 'PATCH',
       headers: requestHeader,
       body: JSON.stringify({
@@ -106,9 +116,26 @@ const TodoTemplate = () => {
   const countRestTodo = () =>
     todos.filter((todo) => !todo.done).length;
 
+  // 비동기 방식 등급 승격 함수
+  const fetchPromote = async () => {
+    const res = await fetch(API_USER_URL + '/promote', {
+      method: 'PUT',
+      headers: requestHeader,
+    });
+
+    if (res.status === 400) {
+      alert('이미 프리미엄 회원입니다.');
+    } else if (res.status === 200) {
+      const json = await res.json();
+      localStorage.setItem('ACCESS_TOKEN', json.token);
+      localStorage.setItem('USER_ROLE', json.role);
+      setToken(json.token);
+    }
+  };
+
   useEffect(() => {
     // 페이지가 처음 렌더링 됨과 동시에 할 일 목록을 서버에 요청해서 뿌려 주겠습니다.
-    fetch(`${API_BASE_URL}${TODO}`, {
+    fetch(API_BASE_URL, {
       method: 'GET',
       headers: requestHeader,
     })
@@ -133,7 +160,10 @@ const TodoTemplate = () => {
   // 로딩이 끝난 후 보여줄 컴포넌트
   const loadEndedPage = (
     <div className='TodoTemplate'>
-      <TodoHeader countTodo={countRestTodo} />
+      <TodoHeader
+        countTodo={countRestTodo}
+        promote={fetchPromote}
+      />
       <TodoMain
         todoList={todos}
         remove={removeTodo}
