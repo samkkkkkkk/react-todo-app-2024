@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
 
 import '../../scss/TodoTemplate.scss';
 import TodoHeader from './TodoHeader';
@@ -11,32 +15,23 @@ import {
 } from '../../config/host-config';
 import { useNavigate } from 'react-router-dom';
 import { Spinner } from 'reactstrap';
+import AuthContext from '../../utils/AuthContext';
+import axiosInstance from '../../config/axios-config';
 
 const TodoTemplate = () => {
   const API_BASE_URL = BASE + TODO;
   const API_USER_URL = BASE + USER;
 
+  // 라우팅 사용
   const redirection = useNavigate();
 
-  // 백앤드 서버에 할 일 목록(json)을 요청(fetch)해서 받아와야 함
+  const { onLogout, onLogin } = useContext(AuthContext);
 
   // todos 배열을 상태 관리
   const [todos, setTodos] = useState([]);
 
   // 로딩 상태값 관리 (처음에는 로딩이 무조건 필요하기 때문에 true -> 로딩이 끝나면 false로 진행)
   const [loading, setLoading] = useState(true);
-
-  // 로그인 인증 토큰 얻어오기
-  const [token, setToken] = useState(
-    localStorage.getItem('ACCESS_TOKEN'),
-  );
-
-  // fetch 요청을 보낼 때 사용할 요청 해더 설정.
-  const requestHeader = {
-    'content-type': 'application/json',
-    // JWT에 대한 인증 토큰이라는 타입을 선언.
-    Authorization: 'Bearer ' + token,
-  };
 
   // TodoInput에게 todoText를 받아오는 함수
   // 자식 컴포넌트가 부모 컴포넌트에게 데이터를 전달할 때는
@@ -48,43 +43,21 @@ const TodoTemplate = () => {
       title: todoText,
     };
 
-    const res = await fetch(API_BASE_URL, {
-      method: 'POST',
-      headers: requestHeader,
-      body: JSON.stringify(newTodo),
-    });
-    if (res.status === 200) {
-      const json = await res.json();
-      setTodos(json.todos);
-    } else if (res.status === 403) {
-      const text = await res.text();
-      alert(text);
+    try {
+      const res = await axiosInstance.post(
+        API_BASE_URL,
+        newTodo,
+      );
+      if (res.status === 200) setTodos(res.data.todos);
+    } catch (error) {
+      console.log('error: ', error);
     }
-
-    /*    
-    fetch(`${API_BASE_URL}${TODO}`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(newTodo),
-    })
-      .then((res) => {
-        if (res.status === 200) return res.json();
-        // status 상태에 따라 에러 처리를 다르게 진행
-        else {
-          console.log('error');
-        }
-      })
-      .then((data) => {
-        setTodos(data.todos);
-      });
-      */
   };
 
   // 할 일 삭제 처리 함수
   const removeTodo = (id) => {
     fetch(`${API_BASE_URL}/${id}`, {
       method: 'DELETE',
-      headers: requestHeader,
     })
       .then((res) => res.json())
       .then((data) => setTodos(data.todos))
@@ -98,7 +71,7 @@ const TodoTemplate = () => {
   const checkTodo = (id, done) => {
     fetch(API_BASE_URL, {
       method: 'PATCH',
-      headers: requestHeader,
+
       body: JSON.stringify({
         id,
         done: !done,
@@ -120,7 +93,6 @@ const TodoTemplate = () => {
   const fetchPromote = async () => {
     const res = await fetch(API_USER_URL + '/promote', {
       method: 'PUT',
-      headers: requestHeader,
     });
 
     if (res.status === 400) {
@@ -129,32 +101,24 @@ const TodoTemplate = () => {
       const json = await res.json();
       localStorage.setItem('ACCESS_TOKEN', json.token);
       localStorage.setItem('USER_ROLE', json.role);
-      setToken(json.token);
     }
   };
 
   useEffect(() => {
     // 페이지가 처음 렌더링 됨과 동시에 할 일 목록을 서버에 요청해서 뿌려 주겠습니다.
-    fetch(API_BASE_URL, {
-      method: 'GET',
-      headers: requestHeader,
-    })
-      .then((res) => {
-        if (res.status === 200) return res.json();
-        else if (res.status === 403) {
-          alert('로그인이 필요한 서비스 입니다!');
-          redirection('/login');
-        } else {
-          alert('관리자에게 문의하세요!');
-        }
-      })
-      .then((json) => {
-        // fetch를 통해 받은 데이터를 상태 변수에 전달
-        if (json) setTodos(json.todos);
 
-        // 로딩 완료 처리
+    const fetchTodos = async () => {
+      try {
+        const res = await axiosInstance.get(API_BASE_URL);
+        if (res.status === 200) setTodos(res.data.todos);
+      } catch (error) {
+        console.log('error: ', error);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchTodos();
   }, []);
 
   // 로딩이 끝난 후 보여줄 컴포넌트
