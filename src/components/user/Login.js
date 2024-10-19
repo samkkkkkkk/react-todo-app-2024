@@ -66,8 +66,7 @@ const Login = () => {
         password: $password.value,
       });
 
-      const { token, userName, email, role } =
-        await res.data;
+      const { token, userName, role } = await res.data;
 
       // Context API를 사용하여 로그인 상태를 업데이트 합니다.
       onLogin(token, userName, role);
