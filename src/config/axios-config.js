@@ -15,7 +15,6 @@ const USER_URL = BASE + USER;
 
 // Axios 인스턴스 생성
 const axiosInstance = axios.create({
-  baseURL: TODO_URL,
   headers: {
     'Content-Type': 'application/json',
   },

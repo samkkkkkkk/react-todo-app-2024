@@ -38,28 +38,27 @@ const Login = () => {
     }
   }, [isLoggedIn]);
 
-  // 서버에 비동기 로그인 (AJAX 요청)
+  // 서버에 비동기 로그인 요청(AJAX 요청)
   // 함수 앞에 async를 붙이면 해당 함수는 프로미스 객체를 바로 리턴합니다.
   const fetchLogin = async () => {
-    // 이메일과 비밀번호를 직접 지목해서 얻어오세요. (getElementById로 직접 지목해서 가져오세요.)
-    // 요청방식: POST / email, password라는 이름으로 JSON을 전송하세요.
-    // 응답 데이터를 console.log로 확인하세요.
+    // 이메일, 비밀번호 입력 태그 취득하기
     const $email = document.getElementById('email');
     const $password = document.getElementById('password');
 
     // await는 async로 선언된 함수에서만 사용이 가능합니다.
     // await는 프로미스 객체가 처리될 때까지 기다립니다.
     // 프로미스 객체의 반환값을 바로 활용할 수 있도록 도와줍니다.
-    // tnen()을 활용하는 것보다 가독성이 좋고, 쓰기도 쉽습니다.
-    // const res = await fetch(REQUEST_URL, {
-    //   method: 'POST',
-    //   headers: { 'content-type': 'application/json' },
-    //   body: JSON.stringify({
-    //     email: $email.value,
-    //     password: $password.value,
-    //   }),
-    // });
-
+    // then()을 활용하는 것보다 가독성이 좋고, 쓰기도 쉽습니다.
+    /*
+    const res = await fetch(REQUEST_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        email: $email.value,
+        password: $password.value,
+      }),
+    });
+    */
     try {
       const res = await axios.post(REQUEST_URL, {
         email: $email.value,
@@ -80,6 +79,8 @@ const Login = () => {
 
   const loginHandler = (e) => {
     e.preventDefault();
+    // 입력값에 관련된 처리를 하고 싶다면 여기서 하시면 됩니다.
+    // 예제에서는 생략하겠습니다.
 
     // 서버에 로그인 요청 전송
     fetchLogin();
